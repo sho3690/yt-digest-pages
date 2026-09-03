@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Digest">
+<meta name="theme-color" content="#f5f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)">
+<meta name="robots" content="noindex, nofollow">
+<title>YouTube Digest</title>
+<script>
+  /* 保存された表示モードを描画前に当てる（後から当てるとちらつく） */
+  (function () {
+    try {
+      var t = localStorage.getItem("ytd-theme");
+      if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  })();
+  window.YTD_BUILD = "20260903170200";
+</script>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+<link rel="icon" href="./icons/icon-192.png" type="image/png">
+<link rel="stylesheet" href="./app.css?v=20260903170200">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9-4.3-4.1 5.9-.8z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star-fill" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.1 5.9L12 16.9l-5.3 2.8 1.1-5.9-4.3-4.1 5.9-.8z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check-all" viewBox="0 0 24 24"><path d="M3 12.5l4.5 4.5L15 9.5M10 17l9.5-9.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></symbol>
+  <symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4.5v15A7.5 7.5 0 0 0 12 4.5z" fill="currentColor"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</svg>
+
+<div class="app" id="app">
+
+  <aside class="sidebar" id="sidebar" aria-label="ナビゲーション">
+    <div class="brand">
+      <span class="brand__mark" aria-hidden="true"><svg><use href="#i-play"/></svg></span>
+      <div class="brand__text">
+        <div class="brand__name">YouTube Digest</div>
+        <div class="brand__sub">登録チャンネルの週間まとめ</div>
+      </div>
+      <button class="iconbtn sidebar__close" id="drawer-close" type="button" aria-label="閉じる"><svg><use href="#i-close"/></svg></button>
+    </div>
+
+    <div class="seg" id="mode-seg" role="tablist" aria-label="読み物の種類">
+      <button type="button" class="seg__btn is-active" role="tab" data-mode="weeks" aria-selected="true">週のまとめ<span class="seg__count" id="seg-weeks"></span></button>
+      <button type="button" class="seg__btn" role="tab" data-mode="videos" aria-selected="false">動画<span class="seg__count" id="seg-videos"></span></button>
+    </div>
+
+    <nav class="nav" aria-label="絞り込み">
+      <div class="nav__group" id="nav-primary"></div>
+      <div class="nav__group">
+        <h2 class="nav__label">週</h2>
+        <div id="nav-weeks"></div>
+      </div>
+      <div class="nav__group" id="nav-channels-group">
+        <h2 class="nav__label">チャンネル</h2>
+        <div id="nav-channels"></div>
+      </div>
+    </nav>
+
+    <div class="sidebar__foot">
+      <div class="notice notice--warn" id="notice-stale" hidden></div>
+      <div class="foot__meta">最終更新 <time id="built-at"></time></div>
+      <button class="textbtn textbtn--quiet" id="theme-toggle" type="button">
+        <svg><use href="#i-theme"/></svg><span id="theme-label">表示: システム</span>
+      </button>
+    </div>
+  </aside>
+
+  <section class="list" id="list" aria-label="記事一覧">
+    <header class="list__head">
+      <button class="iconbtn list__menu" id="menu-btn" type="button" aria-label="メニューを開く"><svg><use href="#i-menu"/></svg></button>
+      <div class="list__heading">
+        <h1 class="list__title" id="list-title">すべて</h1>
+        <span class="list__count" id="list-count"></span>
+      </div>
+      <button class="textbtn textbtn--quiet" id="mark-all" type="button" title="表示中の記事をすべて既読にする">
+        <svg><use href="#i-check-all"/></svg><span>すべて既読</span>
+      </button>
+    </header>
+    <div class="list__search">
+      <svg class="list__search-icon" aria-hidden="true"><use href="#i-search"/></svg>
+      <input type="search" id="search" placeholder="記事・動画・チャンネルを検索" aria-label="検索" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="list__scroll" id="list-scroll" tabindex="-1"></div>
+  </section>
+
+  <article class="reader" id="reader" aria-label="本文">
+    <header class="reader__bar">
+      <button class="iconbtn reader__back" id="reader-back" type="button" aria-label="一覧に戻る"><svg><use href="#i-back"/></svg></button>
+      <div class="reader__nav">
+        <button class="iconbtn" id="prev-btn" type="button" title="前の記事（k）" aria-label="前の記事"><svg><use href="#i-up"/></svg></button>
+        <button class="iconbtn" id="next-btn" type="button" title="次の記事（j）" aria-label="次の記事"><svg><use href="#i-down"/></svg></button>
+      </div>
+      <div class="reader__pos" id="reader-pos"></div>
+      <div class="reader__actions">
+        <button class="iconbtn" id="star-btn" type="button" title="スター（s）" aria-label="スター" aria-pressed="false"><svg><use href="#i-star"/></svg></button>
+        <button class="textbtn" id="read-btn" type="button" title="既読・未読を切り替える（m）"><svg><use href="#i-check"/></svg><span>既読</span></button>
+      </div>
+    </header>
+    <div class="reader__scroll" id="reader-scroll">
+      <div class="reader__empty" id="reader-empty">
+        <div class="empty__mark" aria-hidden="true"><svg><use href="#i-play"/></svg></div>
+        <p class="empty__title">左の一覧から選ぶと、ここに本文が表示されます</p>
+        <p class="empty__sub" id="empty-stats"></p>
+        <dl class="empty__keys">
+          <div><dt>j / k</dt><dd>次・前の記事</dd></div>
+          <div><dt>m</dt><dd>既読・未読</dd></div>
+          <div><dt>s</dt><dd>スター</dd></div>
+          <div><dt>/</dt><dd>検索</dd></div>
+        </dl>
+      </div>
+      <div class="reader__content" id="reader-content" hidden></div>
+    </div>
+  </article>
+
+</div>
+<div class="scrim" id="scrim" hidden></div>
+<script src="./app.js?v=20260903170200"></script>
+</body>
+</html>

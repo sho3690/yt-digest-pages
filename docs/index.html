@@ -19,12 +19,12 @@
       if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
     } catch (e) {}
   })();
-  window.YTD_BUILD = "20260903173252";
+  window.YTD_BUILD = "20260903180833";
 </script>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" href="./icons/icon-192.png" type="image/png">
-<link rel="stylesheet" href="./app.css?v=20260903173252">
+<link rel="stylesheet" href="./app.css?v=20260903180833">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -40,6 +40,7 @@
   <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></symbol>
   <symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4.5v15A7.5 7.5 0 0 0 12 4.5z" fill="currentColor"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 </svg>
 
@@ -69,6 +70,9 @@
       <div class="nav__group" id="nav-channels-group">
         <h2 class="nav__label">チャンネル</h2>
         <div id="nav-channels"></div>
+        <button type="button" class="nav__item nav__item--add" id="add-channel">
+          <svg><use href="#i-plus"/></svg><span class="nav__name">チャンネルを追加</span>
+        </button>
       </div>
     </nav>
 
@@ -130,6 +134,21 @@
 
 </div>
 <div class="scrim" id="scrim" hidden></div>
-<script src="./app.js?v=20260903173252"></script>
+
+<dialog class="dialog" id="channel-dialog" aria-labelledby="channel-dialog-title">
+  <form class="dialog__form" id="channel-form" novalidate>
+    <h2 class="dialog__title" id="channel-dialog-title">チャンネルを追加</h2>
+    <p class="dialog__help">YouTubeのチャンネルURL、@ハンドル、またはそのチャンネルの動画URLを貼り付けてください。</p>
+    <label class="label" for="channel-input">チャンネルのURL または @ハンドル</label>
+    <input id="channel-input" class="field" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://www.youtube.com/@…">
+    <p class="field__error" id="channel-error" role="alert" hidden></p>
+    <p class="dialog__note">GitHubの画面が開くので、そのまま「Submit new issue」を押してください。数分で自動登録され、次の土曜から動画が集まります。</p>
+    <div class="dialog__actions">
+      <button type="button" class="textbtn" id="channel-cancel">閉じる</button>
+      <button type="submit" class="textbtn textbtn--primary"><svg><use href="#i-ext"/></svg><span>GitHubで登録する</span></button>
+    </div>
+  </form>
+</dialog>
+<script src="./app.js?v=20260903180833"></script>
 </body>
 </html>

@@ -48,7 +48,7 @@
      "nav-channels", "nav-channels-group", "notice-stale", "built-at", "theme-toggle", "theme-label", "menu-btn",
      "drawer-close", "list-title", "list-count", "mark-all", "search", "list-scroll", "reader-back", "prev-btn",
      "next-btn", "reader-pos", "star-btn", "read-btn", "reader-scroll", "reader-empty", "reader-content",
-     "empty-stats"]
+     "empty-stats", "add-channel", "channel-dialog", "channel-form", "channel-input", "channel-error", "channel-cancel"]
       .forEach(function (id) {
         el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
       });
@@ -194,8 +194,10 @@
     el.navChannelsGroup.hidden = state.mode !== "videos";
     el.navChannels.innerHTML = state.data.channels.map(function (c) {
       var u = unreadIn(state.videos, function (e) { return e.data.channel === c.name; });
+      if (!c.count) return navItem("channel:" + c.name, c.name, { text: "登録済み", unread: 0 });
       return navItem("channel:" + c.name, c.name, { text: u ? u + " / " + c.count : c.count, unread: u });
     }).join("");
+    el.addChannel.hidden = !(state.data.app && state.data.app.request_repo);
   }
 
   // ---------- 一覧 ----------
@@ -508,6 +510,45 @@
     el.listScroll.scrollTop = 0;
   }
 
+  // ---------- チャンネル追加（GitHub の Issue を受け口にする。静的サイトなので直接は書けない） ----------
+  function channelRequestUrl(value) {
+    var app = state.data.app;
+    var title = "チャンネル追加: " + value;
+    var body = "channel: " + value + "\n\n（YouTube Digest の「チャンネルを追加」から送信）";
+    return "https://github.com/" + app.request_repo + "/issues/new" +
+      "?labels=" + encodeURIComponent(app.request_label || "channel-request") +
+      "&title=" + encodeURIComponent(title) + "&body=" + encodeURIComponent(body);
+  }
+  function validateChannelInput(v) {
+    v = v.trim();
+    if (!v) return "URL か @ハンドルを入力してください。";
+    if (/^UC[A-Za-z0-9_-]{22}$/.test(v)) return "";
+    if (/^@?[A-Za-z0-9._-]{3,60}$/.test(v)) return "";
+    if (/^(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(v)) return "";
+    return "YouTube のチャンネルURL、@ハンドル、または動画URLを入力してください。";
+  }
+  function openChannelDialog() {
+    el.channelError.hidden = true;
+    el.channelInput.value = "";
+    if (typeof el.channelDialog.showModal === "function") el.channelDialog.showModal();
+    else el.channelDialog.setAttribute("open", "");
+    setTimeout(function () { el.channelInput.focus(); }, 50);
+  }
+  function closeChannelDialog() {
+    if (el.channelDialog.open && typeof el.channelDialog.close === "function") el.channelDialog.close();
+    else el.channelDialog.removeAttribute("open");
+  }
+  function submitChannel(ev) {
+    ev.preventDefault();
+    var v = el.channelInput.value.trim();
+    var err = validateChannelInput(v);
+    if (err) { el.channelError.textContent = err; el.channelError.hidden = false; el.channelInput.focus(); return; }
+    var w = window.open(channelRequestUrl(v), "_blank", "noopener");
+    if (!w) location.href = channelRequestUrl(v);
+    closeChannelDialog();
+    closeDrawer();
+  }
+
   function openDrawer() { document.body.classList.add("is-drawer-open"); el.scrim.hidden = false; }
   function closeDrawer() { document.body.classList.remove("is-drawer-open"); el.scrim.hidden = true; }
   function closeReader() { document.body.classList.remove("is-reader-open"); }
@@ -555,6 +596,10 @@
     el.readBtn.addEventListener("click", function () { if (state.selected) toggleRead(state.selected); });
     el.markAll.addEventListener("click", markAllRead);
     el.themeToggle.addEventListener("click", cycleTheme);
+    el.addChannel.addEventListener("click", openChannelDialog);
+    el.channelCancel.addEventListener("click", closeChannelDialog);
+    el.channelForm.addEventListener("submit", submitChannel);
+    el.channelDialog.addEventListener("click", function (e) { if (e.target === el.channelDialog) closeChannelDialog(); });
 
     var timer = null;
     el.search.addEventListener("input", function () {

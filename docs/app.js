@@ -78,7 +78,10 @@
       return { key: "w:" + w.id, kind: "week", id: w.id, week: w.id, data: w, _text: text };
     });
     state.videos = data.videos.map(function (v) {
-      var text = [v.title, v.channel, stripTags(v.summary)].concat(v.points.map(stripTags), v.sections)
+      var text = [v.title, v.channel, stripTags(v.summary), stripTags(v.flow || "")]
+        .concat(v.points.map(stripTags), (v.takeaways || []).map(stripTags), v.sections,
+          (v.outline || []).map(function (o) { return o.heading + " " + stripTags(o.summary) + " " + o.details.map(stripTags).join(" "); }),
+          (v.glossary || []).map(function (g) { return g.term + " " + stripTags(g.plain); }))
         .join(" ").toLowerCase();
       return { key: "v:" + v.id, kind: "video", id: v.id, week: v.week, data: v, _text: text };
     });
@@ -347,11 +350,36 @@
       (date ? '<span class="kicker__sep">·</span><span>' + date + "公開</span>" : "") +
       (w ? '<span class="kicker__sep">·</span><span>' + esc(w.label) + " の週</span>" : "") + "</p>");
     parts.push('<h1 class="headline headline--video">' + esc(v.title) + "</h1>");
-    if (v.status === "ok") {
+    if (v.status === "ok" && v.outline && v.outline.length) {
+      // 骨格つきの要約: 結論 → 骨格 → つながり → 持ち帰り → 用語
+      parts.push('<div class="body body--lead"><p>' + v.summary + "</p></div>");
+      parts.push('<section class="skeleton"><h2 class="sources__title">動画の骨格 <span class="n">' + v.outline.length + "</span></h2>" +
+        '<ol class="outline">' + v.outline.map(function (sec, i) {
+          return '<li class="outline__item">' +
+            '<div class="outline__head"><span class="outline__no">' + (i + 1) + "</span>" +
+              (sec.role ? '<span class="outline__role">' + esc(sec.role) + "</span>" : "") +
+              '<h3 class="outline__title">' + esc(sec.heading) + "</h3></div>" +
+            '<p class="outline__summary">' + sec.summary + "</p>" +
+            (sec.details.length ? '<ul class="outline__details">' + sec.details.map(function (d) { return "<li>" + d + "</li>"; }).join("") + "</ul>" : "") +
+            "</li>";
+        }).join("") + "</ol></section>");
+      if (v.flow) parts.push('<section class="flowbox"><h2 class="sources__title">話のつながり</h2><p>' + v.flow + "</p></section>");
+      if (v.takeaways.length) {
+        parts.push('<section class="skeleton"><h2 class="sources__title">持ち帰るポイント <span class="n">' + v.takeaways.length + '</span></h2><ul class="points">' +
+          v.takeaways.map(function (p) { return "<li>" + p + "</li>"; }).join("") + "</ul></section>");
+      }
+      if (v.glossary.length) {
+        parts.push('<section class="skeleton"><h2 class="sources__title">用語をやさしく</h2><dl class="glossary">' +
+          v.glossary.map(function (g) { return "<div><dt>" + esc(g.term) + "</dt><dd>" + g.plain + "</dd></div>"; }).join("") + "</dl></section>");
+      }
+      if (v.note) parts.push('<p class="note">※ ' + esc(v.note) + "</p>");
+    } else if (v.status === "ok") {
+      // 古い型の要約（要点の箇条書きだけ）
       parts.push('<div class="body"><p>' + v.summary + "</p></div>");
       if (v.points.length) {
         parts.push('<ul class="points">' + v.points.map(function (p) { return "<li>" + p + "</li>"; }).join("") + "</ul>");
       }
+      parts.push('<p class="note">※ この要約は旧形式です。次の更新で骨格つきの要約に置き換わります。</p>');
       if (v.note) parts.push('<p class="note">※ ' + esc(v.note) + "</p>");
     } else {
       var msg = v.status === "unavailable" ? "この動画は非公開または削除されています。" :

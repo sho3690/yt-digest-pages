@@ -593,3 +593,34 @@ svg { width: 20px; height: 20px; flex: none; }
 .push__status { font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
 .push__status.is-on { color: var(--primary); font-weight: 600; }
 .textbtn--small { height: 32px; font-size: 12.5px; justify-content: center; text-decoration: none; }
+
+/* ---------- 追加: 骨格つきの動画要約 ---------- */
+.skeleton { margin-top: 34px; }
+.outline { list-style: none; margin: 0; padding: 0 0 0 4px; position: relative; }
+.outline::before { content: ""; position: absolute; left: 15px; top: 14px; bottom: 14px; width: 2px; background: var(--border); border-radius: 2px; }
+.outline__item { position: relative; padding: 0 0 22px 40px; }
+.outline__item:last-child { padding-bottom: 4px; }
+.outline__head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 6px; }
+.outline__no {
+  position: absolute; left: 4px; top: 2px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--surface); border: 2px solid var(--accent); color: var(--primary);
+  font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.outline__role { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--accent); padding: 1px 7px; border-radius: 999px; background: var(--tint); }
+.outline__title { margin: 0; font-family: var(--font-serif); font-size: 18px; line-height: 1.4; font-weight: 700; color: var(--text); }
+.outline__summary { margin: 0; font-size: 15.5px; line-height: 1.85; color: var(--text-2); }
+.outline__details { margin: 8px 0 0; padding: 0 0 0 18px; font-size: 13.5px; line-height: 1.7; color: var(--muted); }
+.outline__details li { margin: 2px 0; }
+.outline__details li::marker { color: var(--accent); }
+.flowbox { margin-top: 30px; padding: 16px 18px; border-radius: 12px; background: var(--tint); border: 1px solid transparent; }
+.flowbox .sources__title { margin-bottom: 8px; color: var(--primary); }
+.flowbox p { margin: 0; font-size: 15px; line-height: 1.8; color: var(--text); }
+.glossary { margin: 0; display: grid; gap: 8px; }
+.glossary div { display: grid; grid-template-columns: minmax(96px, 30%) 1fr; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+.glossary dt { font-weight: 700; font-size: 14px; color: var(--text); }
+.glossary dd { margin: 0; font-size: 14px; line-height: 1.65; color: var(--text-2); }
+@media (max-width: 960px) {
+  .outline__title { font-size: 17px; }
+  .glossary div { grid-template-columns: 1fr; gap: 4px; }
+}

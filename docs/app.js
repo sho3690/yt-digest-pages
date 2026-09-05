@@ -48,7 +48,8 @@
      "nav-channels", "nav-channels-group", "notice-stale", "built-at", "theme-toggle", "theme-label", "menu-btn",
      "drawer-close", "list-title", "list-count", "mark-all", "search", "list-scroll", "reader-back", "prev-btn",
      "next-btn", "reader-pos", "star-btn", "read-btn", "reader-scroll", "reader-empty", "reader-content",
-     "empty-stats", "add-channel", "channel-dialog", "channel-form", "channel-input", "channel-error", "channel-cancel"]
+     "empty-stats", "add-channel", "channel-dialog", "channel-form", "channel-input", "channel-error", "channel-cancel",
+     "push-box", "push-status", "push-btn", "push-link"]
       .forEach(function (id) {
         el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
       });
@@ -97,6 +98,7 @@
     renderReader(null);
     renderFoot();
     applyHash();
+    setupPush();
   }
 
   function isValidFilter(f) {
@@ -547,6 +549,126 @@
     if (!w) location.href = channelRequestUrl(v);
     closeChannelDialog();
     closeDrawer();
+  }
+
+  // ---------- 通知（Web Push）----------
+  // 端末の購読情報は、チャンネル追加と同じく GitHub の Issue で本体リポジトリ（非公開）に届ける。
+  // 実際の通知は、週のまとめが公開されたあとに GitHub Actions が送る。
+  var push = { reg: null, sub: null };
+
+  function pushEnv() {
+    var ua = navigator.userAgent || "";
+    var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    var supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    return { ios: ios, standalone: standalone, supported: supported };
+  }
+  function urlBase64ToUint8Array(s) {
+    var pad = "=".repeat((4 - s.length % 4) % 4);
+    var raw = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+  function pushIssueUrl(kind, sub) {
+    var app = state.data.app;
+    var title = kind === "push-subscribe" ? "通知登録" : "通知解除";
+    var body = kind + "\nsubscription: " + JSON.stringify(sub.toJSON ? sub.toJSON() : sub) +
+      "\n\n（YouTube Digest の通知設定から送信。この情報はこの端末に通知を届けるためだけに使われます）";
+    return "https://github.com/" + app.request_repo + "/issues/new?labels=" + encodeURIComponent(kind) +
+      "&title=" + encodeURIComponent(title) + "&body=" + encodeURIComponent(body);
+  }
+  function pushUi(status, opts) {
+    opts = opts || {};
+    el.pushBox.hidden = false;
+    el.pushStatus.textContent = status;
+    el.pushStatus.classList.toggle("is-on", !!opts.on);
+    el.pushBtn.hidden = !opts.button;
+    if (opts.button) { el.pushBtn.textContent = opts.button; el.pushBtn.onclick = opts.onClick || null; }
+    el.pushLink.hidden = !opts.link;
+    if (opts.link) { el.pushLink.textContent = opts.link; el.pushLink.href = opts.href; el.pushLink.onclick = opts.onLink || null; }
+  }
+  function setupPush() {
+    var app = state.data.app;
+    if (!app.vapid_public_key || !app.request_repo) return;
+    var env = pushEnv();
+    if (!env.supported) {
+      if (env.ios && !env.standalone) pushUi("通知は、ホーム画面に追加したアプリから設定できます。");
+      return;
+    }
+    navigator.serviceWorker.register("./sw.js").then(function (reg) {
+      push.reg = reg;
+      if (navigator.clearAppBadge) navigator.clearAppBadge().catch(function () {});
+      return reg.pushManager.getSubscription();
+    }).then(function (sub) {
+      push.sub = sub;
+      renderPush();
+    }).catch(function () {
+      pushUi("通知の準備に失敗しました。ページを再読み込みしてください。");
+    });
+    document.addEventListener("visibilitychange", function () {
+      if (!document.hidden && navigator.clearAppBadge) navigator.clearAppBadge().catch(function () {});
+    });
+  }
+  function renderPush() {
+    var env = pushEnv();
+    if (Notification.permission === "denied") {
+      pushUi("通知がブロックされています。iPhoneの「設定」→「通知」からこのアプリを許可してください。");
+      return;
+    }
+    if (env.ios && !env.standalone) {
+      pushUi("通知は、ホーム画面に追加したアプリから設定できます。");
+      return;
+    }
+    var registered = loadStr("ytd-push-registered", "");
+    if (push.sub && registered === push.sub.endpoint) {
+      pushUi("通知: オン。新しい週のまとめが公開されたら届きます。", {
+        on: true, button: "通知を止める", onClick: unsubscribePush
+      });
+    } else if (push.sub) {
+      pushUi("この端末の登録がまだ送られていません。", {
+        link: "登録を送る（GitHubが開きます）", href: pushIssueUrl("push-subscribe", push.sub),
+        onLink: function () { saveStr("ytd-push-registered", push.sub.endpoint); setTimeout(renderPush, 500); }
+      });
+    } else {
+      pushUi("新しい週のまとめが出たら、この端末に通知を届けます。", {
+        button: "通知を受け取る", onClick: subscribePush
+      });
+    }
+  }
+  function subscribePush() {
+    if (!push.reg) return;
+    pushUi("許可を確認しています…");
+    Notification.requestPermission().then(function (perm) {
+      if (perm !== "granted") { renderPush(); return null; }
+      return push.reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(state.data.app.vapid_public_key)
+      });
+    }).then(function (sub) {
+      if (!sub) return;
+      push.sub = sub;
+      // 許可ダイアログの後は自動でウィンドウを開けないので、次はリンクを押してもらう
+      renderPush();
+    }).catch(function (e) {
+      pushUi("通知の登録に失敗しました: " + (e && e.message ? e.message : "不明なエラー"), {
+        button: "もう一度試す", onClick: subscribePush
+      });
+    });
+  }
+  function unsubscribePush() {
+    var sub = push.sub;
+    if (!sub) { renderPush(); return; }
+    var href = pushIssueUrl("push-unsubscribe", sub);
+    sub.unsubscribe().catch(function () {}).then(function () {
+      push.sub = null;
+      saveStr("ytd-push-registered", "");
+      pushUi("この端末では通知をオフにしました。登録の削除も送っておくと確実です。", {
+        link: "解除を送る（GitHubが開きます）", href: href,
+        onLink: function () { setTimeout(renderPush, 500); },
+        button: "閉じる", onClick: renderPush
+      });
+    });
   }
 
   function openDrawer() { document.body.classList.add("is-drawer-open"); el.scrim.hidden = false; }

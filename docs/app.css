@@ -585,3 +585,11 @@ svg { width: 20px; height: 20px; flex: none; }
   .dialog { width: calc(100vw - 24px); }
   .dialog__form { padding: 20px 18px 16px; }
 }
+
+/* ---------- 追加: 通知の設定 ---------- */
+.push { display: grid; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); }
+.push__row { display: flex; align-items: flex-start; gap: 8px; }
+.push__icon { width: 16px; height: 16px; color: var(--muted); flex: none; margin-top: 1px; }
+.push__status { font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
+.push__status.is-on { color: var(--primary); font-weight: 600; }
+.textbtn--small { height: 32px; font-size: 12.5px; justify-content: center; text-decoration: none; }

@@ -19,12 +19,12 @@
       if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
     } catch (e) {}
   })();
-  window.YTD_BUILD = "20260905082028";
+  window.YTD_BUILD = "20260905141726";
 </script>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" href="./icons/icon-192.png" type="image/png">
-<link rel="stylesheet" href="./app.css?v=20260905082028">
+<link rel="stylesheet" href="./app.css?v=20260905141726">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -40,6 +40,7 @@
   <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M18 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></symbol>
   <symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4.5v15A7.5 7.5 0 0 0 12 4.5z" fill="currentColor"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 </svg>
@@ -77,6 +78,14 @@
     </nav>
 
     <div class="sidebar__foot">
+      <div class="push" id="push-box" hidden>
+        <div class="push__row">
+          <svg class="push__icon" aria-hidden="true"><use href="#i-bell"/></svg>
+          <span class="push__status" id="push-status"></span>
+        </div>
+        <button type="button" class="textbtn textbtn--small" id="push-btn" hidden></button>
+        <a class="textbtn textbtn--small textbtn--primary" id="push-link" target="_blank" rel="noopener noreferrer" hidden></a>
+      </div>
       <div class="notice notice--warn" id="notice-stale" hidden></div>
       <div class="foot__meta">最終更新 <time id="built-at"></time></div>
       <button class="textbtn textbtn--quiet" id="theme-toggle" type="button">
@@ -149,6 +158,6 @@
     </div>
   </form>
 </dialog>
-<script src="./app.js?v=20260905082028"></script>
+<script src="./app.js?v=20260905141726"></script>
 </body>
 </html>

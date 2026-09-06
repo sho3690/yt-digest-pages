@@ -624,3 +624,44 @@ svg { width: 20px; height: 20px; flex: none; }
   .outline__title { font-size: 17px; }
   .glossary div { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* ---------- 追加: 骨格つきの週のまとめ ---------- */
+.theme { position: relative; padding: 18px 20px 16px 20px; margin: 0 0 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.theme__head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; padding-left: 34px; position: relative; }
+.theme__head .outline__no { left: 0; top: 0; }
+.theme__title { margin: 0; font-family: var(--font-serif); font-size: 20px; line-height: 1.4; font-weight: 700; color: var(--text); }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .05em; line-height: 20px; padding: 0 8px; border-radius: 999px; margin-right: 8px; background: var(--surface-muted); color: var(--muted); vertical-align: 2px; white-space: nowrap; }
+.tag--ok { background: rgba(2, 122, 72, .12); color: #027a48; }
+.tag--warn { background: var(--warn-bg); color: var(--warn); }
+:root[data-theme="dark"] .tag--ok { color: #6fd39a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag--ok { color: #6fd39a; } }
+.theme__why { margin: 0 0 10px; font-size: 14px; line-height: 1.7; color: var(--muted); }
+.theme__summary { margin: 0 0 12px; font-size: 15.5px; line-height: 1.85; color: var(--text-2); }
+.views { display: grid; gap: 6px; margin: 0 0 12px; }
+.view { display: grid; grid-template-columns: minmax(84px, 26%) 1fr; gap: 10px; padding: 8px 12px; border-radius: 10px; background: var(--surface-muted); font-size: 14px; line-height: 1.65; }
+.view__who { font-weight: 700; color: var(--text); }
+.view__says { color: var(--text-2); }
+.theme__line { margin: 0 0 8px; font-size: 14px; line-height: 1.7; color: var(--text-2); }
+.theme__facts { margin: 4px 0 12px; }
+.sowhat { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--tint); }
+.sowhat__label { flex: none; font-size: 11px; font-weight: 700; letter-spacing: .05em; color: var(--primary); line-height: 22px; }
+.sowhat p { margin: 0; font-size: 14.5px; line-height: 1.7; color: var(--text); }
+.theme .vchips { margin-top: 6px; }
+.pick { width: 100%; text-align: left; display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 14px; align-items: center; padding: 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border-strong); }
+.pick:hover { border-color: var(--primary); }
+.pick__thumb { width: 160px; height: 90px; border-radius: 10px; background: var(--surface-muted) center/cover no-repeat; }
+.pick__body { display: grid; gap: 4px; min-width: 0; }
+.pick__title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.45; }
+.pick__reason { font-size: 13.5px; color: var(--text-2); line-height: 1.6; }
+.others { display: grid; gap: 6px; }
+.other { width: 100%; text-align: left; display: grid; grid-template-columns: minmax(84px, 24%) 1fr; gap: 10px; padding: 8px 12px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-size: 13.5px; line-height: 1.6; }
+.other:hover { border-color: var(--primary); }
+.other__who { font-weight: 600; color: var(--muted); }
+.other__line { color: var(--text-2); }
+@media (max-width: 960px) {
+  .theme { padding: 14px 14px 12px; }
+  .theme__title { font-size: 18px; }
+  .view, .other { grid-template-columns: 1fr; gap: 2px; }
+  .pick { grid-template-columns: 112px minmax(0, 1fr); }
+  .pick__thumb { width: 112px; height: 63px; }
+}

@@ -72,8 +72,11 @@
     data.weeks.forEach(function (w) { state.weekById[w.id] = w; });
 
     state.weeks = data.weeks.map(function (w) {
-      var text = [w.label, stripTags(w.overview.join(" "))]
-        .concat(w.sections.map(function (s) { return s.title + " " + stripTags(s.html.join(" ")); }), w.channels)
+      var text = [w.label, w.headline || "", stripTags(w.overview.join(" ")), stripTags(w.flow || "")]
+        .concat(w.sections.map(function (s) { return s.title + " " + stripTags(s.html.join(" ")); }), w.channels,
+          (w.takeaways || []).map(stripTags),
+          (w.themes || []).map(function (t) { return [t.why_now, t.so_what, t.agreement, t.disagreement].concat(t.facts, t.views.map(function (v) { return v.who + " " + v.says; })).map(stripTags).join(" "); }),
+          (w.others || []).map(function (o) { return stripTags(o.one_line); }))
         .join(" ").toLowerCase();
       return { key: "w:" + w.id, kind: "week", id: w.id, week: w.id, data: w, _text: text };
     });
@@ -224,10 +227,12 @@
       : '<span class="row__thumb row__thumb--empty"><svg><use href="#i-play"/></svg></span>';
     var meta = 'テーマ' + w.sections.length + " · 動画" + w.video_count + "本" +
       (w.summarized ? "（要約" + w.summarized + "本）" : "");
+    var title = w.headline ? w.headline : w.label + " の週";
+    var chan = w.headline ? esc(w.label) + " · " + esc(meta) : esc(w.date.slice(0, 4)) + "年 · " + esc(meta);
     return '<button type="button" class="' + cls + '" data-key="' + esc(e.key) + '">' +
       '<span class="row__main">' +
-        '<span class="row__meta">' + star + '<span class="row__chan">' + esc(w.date.slice(0, 4)) + "年 · " + esc(meta) + "</span></span>" +
-        '<span class="row__title row__title--serif">' + esc(w.label) + " の週</span>" +
+        '<span class="row__meta">' + star + '<span class="row__chan">' + chan + "</span></span>" +
+        '<span class="row__title row__title--serif">' + esc(title) + "</span>" +
         (w.excerpt ? '<span class="row__excerpt">' + esc(w.excerpt) + "</span>" : "") +
       "</span>" + thumbs + "</button>";
   }
@@ -309,8 +314,29 @@
       '<span class="vchip__title">' + esc(v.title) + "</span></span></button>";
   }
 
+  function themeHtml(t, i) {
+    var parts = ['<section class="theme">'];
+    parts.push('<div class="theme__head"><span class="outline__no">' + (i + 1) + '</span><h2 class="theme__title">' + esc(t.title) + "</h2></div>");
+    if (t.why_now) parts.push('<p class="theme__why"><span class="tag">位置づけ</span>' + t.why_now + "</p>");
+    parts.push('<p class="theme__summary">' + t.summary + "</p>");
+    if (t.views.length) {
+      parts.push('<div class="views">' + t.views.map(function (v) {
+        return '<div class="view"><span class="view__who">' + esc(v.who) + '</span><span class="view__says">' + v.says + "</span></div>";
+      }).join("") + "</div>");
+    }
+    if (t.agreement) parts.push('<p class="theme__line"><span class="tag tag--ok">一致</span>' + t.agreement + "</p>");
+    if (t.disagreement) parts.push('<p class="theme__line"><span class="tag tag--warn">相違</span>' + t.disagreement + "</p>");
+    if (t.facts.length) parts.push('<ul class="outline__details theme__facts">' + t.facts.map(function (f) { return "<li>" + f + "</li>"; }).join("") + "</ul>");
+    if (t.change) parts.push('<p class="theme__line"><span class="tag">変化</span>' + t.change + "</p>");
+    if (t.so_what) parts.push('<div class="sowhat"><span class="sowhat__label">示唆</span><p>' + t.so_what + "</p></div>");
+    if (t.video_ids.length) parts.push('<div class="vchips">' + t.video_ids.map(videoChipHtml).join("") + "</div>");
+    parts.push("</section>");
+    return parts.join("");
+  }
+
   function weekReaderHtml(e) {
     var w = e.data, parts = [];
+    if (w.themes && w.themes.length) return weekReaderHtmlV2(e);
     parts.push('<p class="kicker"><span class="kicker__week">週のまとめ</span><span class="kicker__sep">·</span><span>' +
       esc(w.date.slice(0, 4)) + "年</span></p>");
     parts.push('<h1 class="headline">' + esc(w.label) + " の週</h1>");
@@ -399,6 +425,51 @@
     return parts.join("");
   }
 
+  function weekReaderHtmlV2(e) {
+    var w = e.data, parts = [];
+    parts.push('<p class="kicker"><span class="kicker__week">週のまとめ</span><span class="kicker__sep">·</span><span>' +
+      esc(w.label) + " · " + esc(w.date.slice(0, 4)) + "年</span></p>");
+    parts.push('<h1 class="headline">' + esc(w.headline || (w.label + " の週")) + "</h1>");
+    parts.push('<p class="subline">テーマ ' + w.themes.length + " · 動画 " + w.video_count + "本" +
+      (w.summarized ? "（要約 " + w.summarized + "本）" : "") + " · " + esc(w.channels.slice(0, 4).join(" / ")) +
+      (w.channels.length > 4 ? " ほか" : "") + "</p>");
+    if (w.warnings.length) {
+      parts.push('<div class="warnings">' + w.warnings.map(function (x) { return '<div class="notice notice--warn">' + esc(x) + "</div>"; }).join("") + "</div>");
+    }
+    parts.push('<div class="body body--lead">' + w.overview.map(function (p) { return "<p>" + p + "</p>"; }).join("") + "</div>");
+    if (w.flow) parts.push('<section class="flowbox"><h2 class="sources__title">今週の骨格</h2><p>' + w.flow + "</p></section>");
+    parts.push('<section class="skeleton"><h2 class="sources__title">テーマ <span class="n">' + w.themes.length + "</span></h2>" +
+      w.themes.map(themeHtml).join("") + "</section>");
+    if (w.watch_first && state.byKey["v:" + w.watch_first.video_id]) {
+      var v = state.byKey["v:" + w.watch_first.video_id].data;
+      parts.push('<section class="skeleton"><h2 class="sources__title">今週の一本</h2>' +
+        '<button type="button" class="pick" data-goto="v:' + esc(v.id) + '">' +
+          (v.thumb ? '<span class="pick__thumb" style="background-image:url(&quot;' + esc(v.thumb) + '&quot;)"></span>' : "") +
+          '<span class="pick__body"><span class="vchip__chan">' + esc(v.channel) + '</span><span class="pick__title">' + esc(v.title) + "</span>" +
+          '<span class="pick__reason">' + w.watch_first.reason + "</span></span></button></section>");
+    }
+    if (w.others.length) {
+      parts.push('<section class="skeleton"><h2 class="sources__title">その他の動き <span class="n">' + w.others.length + '</span></h2><div class="others">' +
+        w.others.map(function (o) {
+          var ve = state.byKey["v:" + o.video_id];
+          if (!ve) return "";
+          return '<button type="button" class="other" data-goto="' + esc(ve.key) + '">' +
+            '<span class="other__who">' + esc(ve.data.channel) + '</span><span class="other__line">' + o.one_line + "</span></button>";
+        }).join("") + "</div></section>");
+    }
+    if (w.takeaways.length) {
+      parts.push('<section class="skeleton"><h2 class="sources__title">今週の持ち帰り <span class="n">' + w.takeaways.length + '</span></h2><ul class="points">' +
+        w.takeaways.map(function (p) { return "<li>" + p + "</li>"; }).join("") + "</ul></section>");
+    }
+    if (w.glossary.length) {
+      parts.push('<section class="skeleton"><h2 class="sources__title">用語をやさしく</h2><dl class="glossary">' +
+        w.glossary.map(function (g) { return "<div><dt>" + esc(g.term) + "</dt><dd>" + g.plain + "</dd></div>"; }).join("") + "</dl></section>");
+    }
+    parts.push('<div class="reader__cta"><button type="button" class="textbtn" data-videos-of="' + esc(w.id) + '"><svg><use href="#i-play"/></svg><span>この週の動画 ' + w.video_count + "本を見る</span></button></div>");
+    parts.push(footNav(e));
+    return parts.join("");
+  }
+
   function footNav(e) {
     var idx = state.visible.indexOf(e);
     var prev = idx > 0 ? state.visible[idx - 1] : null;
@@ -451,10 +522,12 @@
     if (!e) return;
     // 別の種類のものへ移るときは、その種類のモードに切り替える
     var wantMode = e.kind === "video" ? "videos" : "weeks";
+    var modeChanged = false;
     if (state.mode !== wantMode) {
       state.mode = wantMode;
       saveStr(KEYS.mode, wantMode);
       if (!isValidFilter(state.filter)) state.filter = "all";
+      modeChanged = true;
     }
     var prevKey = state.selected;
     state.selected = key;
@@ -466,8 +539,8 @@
       computeVisible();
       if (state.visible.indexOf(e) < 0) { state.filter = "all"; computeVisible(); }
       renderAll();
-    } else if (wantMode !== (prevKey && state.byKey[prevKey] ? (state.byKey[prevKey].kind === "video" ? "videos" : "weeks") : wantMode)) {
-      renderAll();
+    } else if (modeChanged) {
+      renderAll();   // 一覧の種類が変わったので描き直す
     } else {
       renderNav();
       if (prevKey) refreshRow(prevKey);

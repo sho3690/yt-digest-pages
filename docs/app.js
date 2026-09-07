@@ -7,7 +7,7 @@
   "use strict";
 
   var KEYS = { read: "ytd-read", star: "ytd-star", theme: "ytd-theme", mode: "ytd-mode", filter: "ytd-filter" };
-  var STALE_DAYS = 9;      // 週1回の更新がこれ以上止まっていたら知らせる
+  var STALE_DAYS = 3;      // 毎朝の更新がこれ以上止まっていたら知らせる
   var MOBILE = "(max-width: 960px)";
 
   var state = {
@@ -815,7 +815,7 @@
       var days = (Date.now() - built.getTime()) / 86400000;
       if (days > STALE_DAYS) {
         el.noticeStale.hidden = false;
-        el.noticeStale.textContent = "更新が" + Math.floor(days) + "日止まっています。自宅Macの自動実行（毎週土曜13時）が失敗している可能性があります。";
+        el.noticeStale.textContent = "更新が" + Math.floor(days) + "日止まっています。自宅Macの自動実行（毎朝6時）が動いていない可能性があります。";
       }
     } else {
       el.builtAt.textContent = "不明";

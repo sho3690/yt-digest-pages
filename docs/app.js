@@ -194,7 +194,7 @@
     el.navWeeks.innerHTML = state.data.weeks.map(function (w, i) {
       var inWeek = list.filter(function (e) { return e.week === w.id; });
       var u = unreadIn(inWeek);
-      var latest = i === 0 ? '<span class="nav__latest">最新</span>' : "";
+      var latest = i === 0 ? '<span class="nav__latest">' + (w.pending ? "今週" : "最新") + "</span>" : "";
       var text = state.mode === "videos" ? (u ? u + " / " + inWeek.length : inWeek.length) : (u ? "未読" : "");
       return navItem("week:" + w.id, w.label, { text: text, unread: u }, latest);
     }).join("");
@@ -229,6 +229,10 @@
       (w.summarized ? "（要約" + w.summarized + "本）" : "");
     var title = w.headline ? w.headline : w.label + " の週";
     var chan = w.headline ? esc(w.label) + " · " + esc(meta) : esc(w.date.slice(0, 4)) + "年 · " + esc(meta);
+    if (w.pending) {
+      chan = '<span class="badge badge--blue">まとめ待ち</span>' + esc(w.date.slice(0, 4)) + "年 · 動画" + w.video_count + "本" +
+        (w.summarized ? "（要約" + w.summarized + "本）" : "");
+    }
     return '<button type="button" class="' + cls + '" data-key="' + esc(e.key) + '">' +
       '<span class="row__main">' +
         '<span class="row__meta">' + star + '<span class="row__chan">' + chan + "</span></span>" +
@@ -334,8 +338,27 @@
     return parts.join("");
   }
 
+  function pendingWeekHtml(e) {
+    var w = e.data, parts = [];
+    parts.push('<p class="kicker"><span class="kicker__week">今週</span><span class="kicker__sep">·</span><span>' + esc(w.date.slice(0, 4)) + "年</span></p>");
+    parts.push('<h1 class="headline">' + esc(w.label) + " の週</h1>");
+    parts.push('<p class="subline">動画 ' + w.video_count + "本" + (w.summarized ? "（要約 " + w.summarized + "本）" : "") +
+      (w.channels.length ? " · " + esc(w.channels.slice(0, 4).join(" / ")) + (w.channels.length > 4 ? " ほか" : "") : "") + "</p>");
+    parts.push('<div class="notice notice--muted">この週のまとめはまだありません。' + esc(w.date.slice(5).replace("-", "/")) +
+      "（土）13時ごろの自動処理で、1週間分をまとめて作ります。動画ごとの要約は毎朝追加されます。</div>");
+    var vids = w.video_ids.filter(function (id) { return state.byKey["v:" + id]; });
+    if (vids.length) {
+      parts.push('<section class="skeleton"><h2 class="sources__title">ここまでの動画 <span class="n">' + vids.length + '</span></h2><div class="vchips">' +
+        vids.map(videoChipHtml).join("") + "</div></section>");
+    }
+    parts.push('<div class="reader__cta"><button type="button" class="textbtn" data-videos-of="' + esc(w.id) + '"><svg><use href="#i-play"/></svg><span>この週の動画を一覧で見る</span></button></div>');
+    parts.push(footNav(e));
+    return parts.join("");
+  }
+
   function weekReaderHtml(e) {
     var w = e.data, parts = [];
+    if (w.pending) return pendingWeekHtml(e);
     if (w.themes && w.themes.length) return weekReaderHtmlV2(e);
     parts.push('<p class="kicker"><span class="kicker__week">週のまとめ</span><span class="kicker__sep">·</span><span>' +
       esc(w.date.slice(0, 4)) + "年</span></p>");

@@ -344,7 +344,8 @@
     parts.push('<h1 class="headline">' + esc(w.label) + " の週</h1>");
     parts.push('<p class="subline">動画 ' + w.video_count + "本" + (w.summarized ? "（要約 " + w.summarized + "本）" : "") +
       (w.channels.length ? " · " + esc(w.channels.slice(0, 4).join(" / ")) + (w.channels.length > 4 ? " ほか" : "") : "") + "</p>");
-    parts.push('<div class="notice notice--muted">この週のまとめはまだありません。' + esc(w.date.slice(5).replace("-", "/")) +
+    var sat = w.date.slice(5).split("-").map(function (x) { return String(parseInt(x, 10)); }).join("/");
+    parts.push('<div class="notice notice--muted">この週のまとめはまだありません。' + esc(sat) +
       "（土）13時ごろの自動処理で、1週間分をまとめて作ります。動画ごとの要約は毎朝追加されます。</div>");
     var vids = w.video_ids.filter(function (id) { return state.byKey["v:" + id]; });
     if (vids.length) {

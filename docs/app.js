@@ -1059,5 +1059,17 @@
     window.matchMedia(MOBILE).addEventListener("change", function (m) { if (!m.matches) { closeDrawer(); closeReader(); } });
   }
 
+  /* 二本指のピンチ拡大を止める。iPhone の Safari は viewport の user-scalable=no を無視することがあるため、
+     Safari 独自の gesture イベントと、2本指の touchmove を止める。1本指のスクロールには触らない。 */
+  function lockPinchZoom() {
+    ["gesturestart", "gesturechange", "gestureend"].forEach(function (type) {
+      document.addEventListener(type, function (e) { e.preventDefault(); }, { passive: false });
+    });
+    document.addEventListener("touchmove", function (e) {
+      if (e.touches.length > 1 || (typeof e.scale === "number" && e.scale !== 1)) e.preventDefault();
+    }, { passive: false });
+  }
+
+  lockPinchZoom();
   boot();
 })();

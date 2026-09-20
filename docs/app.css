@@ -30,8 +30,6 @@
   --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.12);
   --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN",
           "Noto Sans JP", "Segoe UI", Roboto, sans-serif;
-  --font-serif: "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Yu Mincho", YuMincho,
-                "Noto Serif JP", Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --sidebar-w: 240px;
   --list-w: 424px;
@@ -239,7 +237,7 @@ svg { width: 20px; height: 20px; flex: none; }
   border-bottom: 1px solid var(--border);
   backdrop-filter: saturate(1.4) blur(8px);
 }
-.group__label { font-family: var(--font-serif); font-size: 14px; font-weight: 700; letter-spacing: .02em; color: var(--text); }
+.group__label { font-size: 14px; font-weight: 700; letter-spacing: .01em; color: var(--text); }
 .group__label small { font-family: var(--font); font-size: 11px; font-weight: 600; color: var(--faint); margin-left: 8px; letter-spacing: .04em; }
 .group__count { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
@@ -336,8 +334,7 @@ svg { width: 20px; height: 20px; flex: none; }
 .kicker__sep { color: var(--faint); }
 .headline {
   margin: 0 0 18px;
-  font-family: var(--font-serif);
-  font-size: 30px; line-height: 1.35; font-weight: 700; letter-spacing: .005em;
+  font-size: 28px; line-height: 1.35; font-weight: 700; letter-spacing: -0.01em;
   color: var(--text);
   text-wrap: balance;
 }
@@ -407,7 +404,7 @@ svg { width: 20px; height: 20px; flex: none; }
   font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.45;
 }
 .toclist button:hover { border-color: var(--primary); color: var(--primary); }
-.toclist .no { font-family: var(--font-serif); font-size: 13px; color: var(--faint); min-width: 1.4em; }
+.toclist .no { font-size: 13px; color: var(--faint); min-width: 1.4em; }
 .toclist .sub { margin-left: auto; font-size: 11.5px; color: var(--faint); font-weight: 500; white-space: nowrap; }
 
 .reader__foot { margin-top: 40px; display: flex; justify-content: space-between; gap: 12px; }
@@ -450,7 +447,7 @@ svg { width: 20px; height: 20px; flex: none; }
   .reader__back { display: inline-flex; }
   .reader__bar { padding-left: 8px; padding-top: env(safe-area-inset-top); height: calc(56px + env(safe-area-inset-top)); }
   .reader__content { padding: 28px 20px calc(72px + env(safe-area-inset-bottom)); }
-  .headline { font-size: 25px; }
+  .headline { font-size: 24px; }
   .body { font-size: 16px; line-height: 1.9; }
   .row { padding-left: 22px; grid-template-columns: minmax(0, 1fr) auto; }
   .row__thumb { width: 92px; height: 52px; }
@@ -493,7 +490,7 @@ svg { width: 20px; height: 20px; flex: none; }
 
 /* 週の行 */
 .row--week { padding-top: 16px; padding-bottom: 16px; }
-.row__title--serif { font-family: var(--font-serif); font-size: 17px; letter-spacing: .01em; }
+.row__title--week { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
 .row__mosaic {
   display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
   width: 104px; height: 58px; border-radius: 7px; overflow: hidden; flex: none; align-self: start;
@@ -508,10 +505,10 @@ svg { width: 20px; height: 20px; flex: none; }
 .body--lead p:last-child { margin-bottom: 1.2em; }
 .topic { margin-top: 36px; }
 .topic__title {
-  margin: 0 0 14px; font-family: var(--font-serif); font-size: 21px; line-height: 1.4; font-weight: 700; color: var(--text);
+  margin: 0 0 14px; font-size: 20px; line-height: 1.4; font-weight: 700; letter-spacing: -0.01em; color: var(--text);
   display: flex; align-items: baseline; gap: 12px;
 }
-.topic__no { font-size: 13px; font-weight: 600; color: var(--faint); font-family: var(--font); letter-spacing: .04em; }
+.topic__no { font-size: 13px; font-weight: 600; color: var(--faint); letter-spacing: .04em; }
 .vchips { display: grid; gap: 6px; margin: 4px 0 0; }
 .vchip {
   display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 10px; align-items: center;
@@ -548,7 +545,7 @@ svg { width: 20px; height: 20px; flex: none; }
 .hero:hover .hero__play { transform: translate(-50%, -50%) scale(1.06); background: #fff; }
 .hero--empty { display: flex; align-items: center; justify-content: center; color: var(--faint); }
 .hero--empty svg { width: 40px; height: 40px; }
-.headline--video { font-size: 26px; }
+.headline--video { font-size: 24px; }
 .points { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
 .points li {
   position: relative; padding: 12px 14px 12px 40px; border-radius: 10px;
@@ -659,7 +656,7 @@ svg { width: 20px; height: 20px; flex: none; }
   font-variant-numeric: tabular-nums;
 }
 .outline__role { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--accent); padding: 1px 7px; border-radius: 999px; background: var(--tint); }
-.outline__title { margin: 0; font-family: var(--font-serif); font-size: 18px; line-height: 1.4; font-weight: 700; color: var(--text); }
+.outline__title { margin: 0; font-size: 17px; line-height: 1.4; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
 .outline__summary { margin: 0; font-size: 15.5px; line-height: 1.85; color: var(--text-2); }
 .outline__details { margin: 8px 0 0; padding: 0 0 0 18px; font-size: 13.5px; line-height: 1.7; color: var(--muted); }
 .outline__details li { margin: 2px 0; }
@@ -680,7 +677,7 @@ svg { width: 20px; height: 20px; flex: none; }
 .theme { position: relative; padding: 18px 20px 16px 20px; margin: 0 0 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
 .theme__head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; padding-left: 34px; position: relative; }
 .theme__head .outline__no { left: 0; top: 0; }
-.theme__title { margin: 0; font-family: var(--font-serif); font-size: 20px; line-height: 1.4; font-weight: 700; color: var(--text); }
+.theme__title { margin: 0; font-size: 19px; line-height: 1.4; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
 .tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .05em; line-height: 20px; padding: 0 8px; border-radius: 999px; margin-right: 8px; background: var(--surface-muted); color: var(--muted); vertical-align: 2px; white-space: nowrap; }
 .tag--ok { background: rgba(2, 122, 72, .12); color: #027a48; }
 .tag--warn { background: var(--warn-bg); color: var(--warn); }

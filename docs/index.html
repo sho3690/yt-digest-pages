@@ -19,12 +19,12 @@
       if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
     } catch (e) {}
   })();
-  window.YTD_BUILD = "20260919224228";
+  window.YTD_BUILD = "20260920045832";
 </script>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" href="./icons/icon-192.png" type="image/png">
-<link rel="stylesheet" href="./app.css?v=20260919224228">
+<link rel="stylesheet" href="./app.css?v=20260920045832">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -42,6 +42,7 @@
   <symbol id="i-theme" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4.5v15A7.5 7.5 0 0 0 12 4.5z" fill="currentColor"/></symbol>
   <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-manage" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="15" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
   <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 </svg>
 
@@ -71,8 +72,8 @@
       <div class="nav__group" id="nav-channels-group">
         <h2 class="nav__label">チャンネル</h2>
         <div id="nav-channels"></div>
-        <button type="button" class="nav__item nav__item--add" id="add-channel">
-          <svg><use href="#i-plus"/></svg><span class="nav__name">チャンネルを追加</span>
+        <button type="button" class="nav__item nav__item--add" id="manage-channels">
+          <svg><use href="#i-manage"/></svg><span class="nav__name">チャンネルを管理</span>
         </button>
       </div>
     </nav>
@@ -144,20 +145,54 @@
 </div>
 <div class="scrim" id="scrim" hidden></div>
 
-<dialog class="dialog" id="channel-dialog" aria-labelledby="channel-dialog-title">
-  <form class="dialog__form" id="channel-form" novalidate>
-    <h2 class="dialog__title" id="channel-dialog-title">チャンネルを追加</h2>
-    <p class="dialog__help">YouTubeのチャンネルURL、@ハンドル、またはそのチャンネルの動画URLを貼り付けてください。</p>
-    <label class="label" for="channel-input">チャンネルのURL または @ハンドル</label>
-    <input id="channel-input" class="field" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://www.youtube.com/@…">
-    <p class="field__error" id="channel-error" role="alert" hidden></p>
-    <p class="dialog__note">GitHubの画面が開くので、そのまま「Submit new issue」を押してください。数分で自動登録され、次の土曜から動画が集まります。</p>
-    <div class="dialog__actions">
-      <button type="button" class="textbtn" id="channel-cancel">閉じる</button>
-      <button type="submit" class="textbtn textbtn--primary"><svg><use href="#i-ext"/></svg><span>GitHubで登録する</span></button>
+<dialog class="dialog dialog--wide" id="manage-dialog" aria-labelledby="manage-title">
+  <div class="dialog__form">
+    <div class="dialog__head">
+      <h2 class="dialog__title" id="manage-title">チャンネルを管理</h2>
+      <button type="button" class="iconbtn" id="manage-close" aria-label="閉じる"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <form class="manage__add" id="manage-add-form" novalidate>
+      <label class="label" for="manage-input">追加するチャンネル（URL・@ハンドル・動画URL）</label>
+      <div class="manage__addrow">
+        <input id="manage-input" class="field" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://www.youtube.com/@…">
+        <button type="submit" class="textbtn"><svg><use href="#i-plus"/></svg><span>追加</span></button>
+      </div>
+      <p class="field__error" id="manage-error" role="alert" hidden></p>
+    </form>
+    <ul class="manage__list" id="manage-list" aria-label="登録チャンネル"></ul>
+    <div class="mstatus" id="manage-status" role="status" hidden></div>
+    <p class="dialog__note" id="manage-note"></p>
+    <div class="dialog__actions dialog__actions--split">
+      <button type="button" class="textbtn textbtn--quiet" id="manage-settings">送信の設定</button>
+      <button type="button" class="textbtn" id="manage-reset" hidden>すべて取り消す</button>
+      <button type="button" class="textbtn textbtn--primary" id="manage-send" disabled><span>変更を送る</span></button>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="dialog" id="token-dialog" aria-labelledby="token-title">
+  <form class="dialog__form" id="token-form" novalidate>
+    <h2 class="dialog__title" id="token-title">GitHubの画面を開かずに送る設定</h2>
+    <p class="dialog__help">GitHubで「このアプリ専用の鍵」を1回だけ作って貼り付けると、以後はGitHubの画面を開かずにアプリ内で変更を送れます。鍵はこの端末の中にだけ保存され、リポジトリには入りません。</p>
+    <ol class="dialog__steps">
+      <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">GitHubの鍵の作成ページ</a>を開く（ログインが必要）</li>
+      <li>Token name に「YouTube Digest」と入れ、Expiration は「1年」などにする</li>
+      <li>Repository access で「Only select repositories」を選び、<code id="token-repo">sho3690/yt-digest</code> を選ぶ</li>
+      <li>Permissions → Repository permissions の <b>Issues</b> を「Read and write」にする（他は触らない）</li>
+      <li>「Generate token」を押し、表示された鍵をコピーして下に貼る</li>
+    </ol>
+    <label class="label" for="token-input">鍵（github_pat_ から始まる文字列）</label>
+    <input id="token-input" class="field" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
+    <p class="field__error" id="token-error" role="alert" hidden></p>
+    <p class="dialog__note">この鍵でできるのは、このリポジトリに Issue を書くことだけです。要約の中身や自宅Macの処理には触れません。鍵はGitHubの「Settings → Developer settings」からいつでも無効化できます。</p>
+    <div class="dialog__actions dialog__actions--split">
+      <button type="button" class="textbtn textbtn--quiet textbtn--danger" id="token-forget" hidden>鍵を削除</button>
+      <button type="button" class="textbtn" id="token-cancel">閉じる</button>
+      <button type="submit" class="textbtn textbtn--primary" id="token-save"><span>確認して保存</span></button>
     </div>
   </form>
 </dialog>
-<script src="./app.js?v=20260919224228"></script>
+<script src="./manage.js?v=20260920045832"></script>
+<script src="./app.js?v=20260920045832"></script>
 </body>
 </html>

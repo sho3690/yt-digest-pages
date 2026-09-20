@@ -48,7 +48,9 @@
      "nav-channels", "nav-channels-group", "notice-stale", "built-at", "theme-toggle", "theme-label", "menu-btn",
      "drawer-close", "list-title", "list-count", "mark-all", "search", "list-scroll", "reader-back", "prev-btn",
      "next-btn", "reader-pos", "star-btn", "read-btn", "reader-scroll", "reader-empty", "reader-content",
-     "empty-stats", "add-channel", "channel-dialog", "channel-form", "channel-input", "channel-error", "channel-cancel",
+     "empty-stats", "manage-channels", "manage-dialog", "manage-close", "manage-add-form", "manage-input", "manage-error",
+     "manage-list", "manage-status", "manage-note", "manage-settings", "manage-reset", "manage-send",
+     "token-dialog", "token-form", "token-input", "token-error", "token-forget", "token-cancel", "token-save", "token-repo",
      "push-box", "push-status", "push-btn", "push-link"]
       .forEach(function (id) {
         el[id.replace(/-([a-z])/g, function (_, c) { return c.toUpperCase(); })] = document.getElementById(id);
@@ -205,7 +207,7 @@
       if (!c.count) return navItem("channel:" + c.name, c.name, { text: "登録済み", unread: 0 });
       return navItem("channel:" + c.name, c.name, { text: u ? u + " / " + c.count : c.count, unread: u });
     }).join("");
-    el.addChannel.hidden = !(state.data.app && state.data.app.request_repo);
+    el.manageChannels.hidden = !(state.data.app && state.data.app.request_repo);
   }
 
   // ---------- 一覧 ----------
@@ -637,43 +639,209 @@
     el.listScroll.scrollTop = 0;
   }
 
-  // ---------- チャンネル追加（GitHub の Issue を受け口にする。静的サイトなので直接は書けない） ----------
-  function channelRequestUrl(value) {
-    var app = state.data.app;
-    var title = "チャンネル追加: " + value;
-    var body = "channel: " + value + "\n\n（YouTube Digest の「チャンネルを追加」から送信）";
-    return "https://github.com/" + app.request_repo + "/issues/new" +
-      "?labels=" + encodeURIComponent(app.request_label || "channel-request") +
-      "&title=" + encodeURIComponent(title) + "&body=" + encodeURIComponent(body);
-  }
-  function validateChannelInput(v) {
-    v = v.trim();
-    if (!v) return "URL か @ハンドルを入力してください。";
-    if (/^UC[A-Za-z0-9_-]{22}$/.test(v)) return "";
-    if (/^@?[A-Za-z0-9._-]{3,60}$/.test(v)) return "";
-    if (/^(https?:\/\/)?(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(v)) return "";
-    return "YouTube のチャンネルURL、@ハンドル、または動画URLを入力してください。";
-  }
-  function openChannelDialog() {
-    el.channelError.hidden = true;
-    el.channelInput.value = "";
-    if (typeof el.channelDialog.showModal === "function") el.channelDialog.showModal();
-    else el.channelDialog.setAttribute("open", "");
-    setTimeout(function () { el.channelInput.focus(); }, 50);
-  }
-  function closeChannelDialog() {
-    if (el.channelDialog.open && typeof el.channelDialog.close === "function") el.channelDialog.close();
-    else el.channelDialog.removeAttribute("open");
-  }
-  function submitChannel(ev) {
-    ev.preventDefault();
-    var v = el.channelInput.value.trim();
-    var err = validateChannelInput(v);
-    if (err) { el.channelError.textContent = err; el.channelError.hidden = false; el.channelInput.focus(); return; }
-    var w = window.open(channelRequestUrl(v), "_blank", "noopener");
-    if (!w) location.href = channelRequestUrl(v);
-    closeChannelDialog();
+  // ---------- チャンネルの管理 ----------
+  // 静的サイトなので channels.yaml に直接は書けない。変更（追加・削除・停止・再開）は手元にため、
+  // 「変更を送る」で GitHub の Issue に1件にまとめて届ける（channel-request.yml が処理して閉じる）。
+  // 端末に鍵（fine-grained token, Issues 書き込みだけ）が保存されていれば API で直接 Issue を立て、
+  // 結果コメントまで待って画面に出す。無ければ GitHub の Issue 作成画面を開く（従来どおり）。
+  var M = window.YTD_MANAGE;
+  var TOKEN_KEY = "ytd-gh-token";
+  var GH_API = "https://api.github.com";
+  var POLL_MS = 6000, POLL_MAX = 40;   // 結果を待つのは最長 4 分
+  var manage = { changes: M.empty(), busy: false };
+
+  function ghToken() { return loadStr(TOKEN_KEY, ""); }
+  function showDialog(d) { if (typeof d.showModal === "function") { if (!d.open) d.showModal(); } else d.setAttribute("open", ""); }
+  function hideDialog(d) { if (d.open && typeof d.close === "function") d.close(); else d.removeAttribute("open"); }
+
+  function openManageDialog() {
+    el.manageError.hidden = true;
+    el.manageInput.value = "";
+    renderManage();
+    showDialog(el.manageDialog);
     closeDrawer();
+  }
+  function renderManage() {
+    var rows = M.rows(state.data.registered || [], manage.changes);
+    var html = manage.changes.adds.map(function (v) {
+      return '<li class="mrow mrow--pending"><div class="mrow__main"><div class="mrow__name">' + esc(v) + '</div>' +
+        '<div class="mrow__meta">追加予定</div></div><div class="mrow__actions">' +
+        '<button type="button" class="textbtn" data-undo-add="' + esc(v) + '">取り消す</button></div></li>';
+    }).concat(rows.map(function (r) {
+      var meta = r.pending ? M.OPS[r.pending] + "予定"
+        : (r.enabled ? "収集中" : "停止中") + (r.count ? " · 動画 " + r.count + "本" : "");
+      var actions = r.pending
+        ? '<button type="button" class="textbtn" data-undo="' + esc(r.id) + '">取り消す</button>'
+        : '<button type="button" class="textbtn" data-op="' + (r.enabled ? "disable" : "enable") + '" data-id="' + esc(r.id) + '">' +
+          (r.enabled ? "停止" : "再開") + "</button>" +
+          '<button type="button" class="textbtn textbtn--danger" data-op="remove" data-id="' + esc(r.id) + '">削除</button>';
+      var cls = "mrow" + (r.pending ? " mrow--pending" : "") + (!r.enabled && !r.pending ? " mrow--off" : "");
+      return '<li class="' + cls + '"><div class="mrow__main"><div class="mrow__name">' + esc(r.name) + "</div>" +
+        '<div class="mrow__meta">' + esc(meta) + "</div></div><div class=\"mrow__actions\">" + actions + "</div></li>";
+    })).join("");
+    el.manageList.innerHTML = html || '<li class="mrow mrow--empty">登録チャンネルはまだありません。</li>';
+
+    var n = M.count(manage.changes);
+    el.manageSend.disabled = !n || manage.busy;
+    el.manageSend.querySelector("span").textContent = manage.busy ? "送信中…" : (n ? "変更を送る（" + n + "件）" : "変更を送る");
+    el.manageReset.hidden = !n || manage.busy;
+    var hasToken = !!ghToken();
+    el.manageNote.textContent = hasToken
+      ? "「変更を送る」を押すとアプリ内で送信され、数分で反映されます。"
+      : "「変更を送る」を押すとGitHubの画面が開くので、「Submit new issue」を押してください。数分で反映されます。";
+    el.manageSettings.textContent = hasToken ? "送信の設定" : "GitHubの画面を開かずに送る設定";
+  }
+  function setManageStatus(msg, kind, opts) {
+    opts = opts || {};
+    if (!msg) { el.manageStatus.hidden = true; el.manageStatus.innerHTML = ""; return; }
+    var lines = Array.isArray(msg) ? msg : [msg];
+    el.manageStatus.hidden = false;
+    el.manageStatus.className = "mstatus mstatus--" + (kind || "info");
+    var links = "";
+    if (opts.reload) links += '<button type="button" class="textbtn textbtn--small" data-reload>再読み込み</button>';
+    if (opts.url) links += '<a href="' + esc(opts.url) + '" target="_blank" rel="noopener noreferrer">GitHubで見る</a>';
+    el.manageStatus.innerHTML = lines.map(function (l) { return "<p>" + esc(l) + "</p>"; }).join("") +
+      (links ? '<p class="mstatus__links">' + links + "</p>" : "");
+    var rb = el.manageStatus.querySelector("[data-reload]");
+    if (rb) rb.onclick = function () { location.reload(); };
+  }
+  function submitAdd(ev) {
+    ev.preventDefault();
+    var r = M.addRequest(manage.changes, el.manageInput.value);
+    if (r.error) { el.manageError.textContent = r.error; el.manageError.hidden = false; el.manageInput.focus(); return; }
+    manage.changes = r.changes;
+    el.manageError.hidden = true;
+    el.manageInput.value = "";
+    setManageStatus(null);
+    renderManage();
+  }
+  function onManageListClick(e) {
+    var t = e.target.closest("[data-op], [data-undo], [data-undo-add]");
+    if (!t || manage.busy) return;
+    if (t.dataset.op) manage.changes = M.setOp(manage.changes, t.dataset.id, t.dataset.op);
+    else if (t.dataset.undo) manage.changes = M.setOp(manage.changes, t.dataset.undo, null);
+    else manage.changes = M.removeAdd(manage.changes, t.dataset.undoAdd);
+    setManageStatus(null);
+    renderManage();
+  }
+  function resetChanges() { manage.changes = M.empty(); setManageStatus(null); renderManage(); }
+
+  // GitHub API（鍵があるときだけ使う。送り先は api.github.com のみ）
+  function gh(method, path, body, token) {
+    var headers = { "Accept": "application/vnd.github+json", "Authorization": "Bearer " + (token || ghToken()),
+                    "X-GitHub-Api-Version": "2022-11-28" };
+    var opts = { method: method, headers: headers };
+    if (body) { headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+    return fetch(GH_API + path, opts).then(function (r) {
+      if (r.ok) return r.status === 204 ? null : r.json();
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        var err = new Error(d.message || ("HTTP " + r.status));
+        err.status = r.status;
+        throw err;
+      });
+    }, function () {
+      var err = new Error("通信できませんでした");
+      err.status = 0;
+      throw err;
+    });
+  }
+  function ghErrorText(e, doing) {
+    var repo = state.data.app.request_repo;
+    if (e.status === 401) return "鍵が無効か期限切れです。「送信の設定」から鍵を作り直してください。";
+    if (e.status === 403) return "鍵の権限が足りません。鍵の Permissions で Issues が「Read and write」になっているか確認してください。";
+    if (e.status === 404) return "リポジトリにアクセスできません。鍵の Repository access に " + repo + " が入っているか確認してください。";
+    if (e.status === 0) return "通信できませんでした。電波状況を確認して、もう一度お試しください。";
+    return (doing || "処理") + "できませんでした: " + (e.message || "不明なエラー");
+  }
+  function sendChanges() {
+    if (manage.busy || !M.count(manage.changes)) return;
+    var app = state.data.app;
+    var label = app.request_label || "channel-request";
+    var issue = M.buildIssue(manage.changes, state.data.registered || []);
+    if (!ghToken()) {
+      var url = M.issueUrl(app.request_repo, label, issue);
+      var w = window.open(url, "_blank", "noopener");
+      if (!w) location.href = url;
+      manage.changes = M.empty();
+      setManageStatus("GitHubの画面で「Submit new issue」を押すと送信完了です。数分後にアプリを再読み込みすると反映されます。", "info");
+      renderManage();
+      return;
+    }
+    manage.busy = true;
+    renderManage();
+    setManageStatus("送信しています…", "info");
+    gh("POST", "/repos/" + app.request_repo + "/issues", { title: issue.title, body: issue.body, labels: [label] })
+      .then(function (created) {
+        manage.changes = M.empty();
+        renderManage();
+        setManageStatus("送信しました。反映を待っています…（ふつう1〜2分）", "info", { url: created.html_url });
+        return waitForResult(app.request_repo, created.number, created.html_url);
+      })
+      .catch(function (e) { setManageStatus(ghErrorText(e, "送信"), "error"); })
+      .then(function () { manage.busy = false; renderManage(); });
+  }
+  function waitForResult(repo, number, url) {
+    var tries = 0;
+    return new Promise(function (resolve) {
+      function tick() {
+        tries += 1;
+        gh("GET", "/repos/" + repo + "/issues/" + number).then(function (is) {
+          var failed = (is.labels || []).some(function (l) { return l.name === "needs-attention"; });
+          if (is.state !== "closed" && !failed) {
+            if (tries >= POLL_MAX) {
+              setManageStatus("まだ処理中です。しばらくしてからアプリを再読み込みしてください。", "info", { url: url, reload: true });
+              return resolve();
+            }
+            setTimeout(tick, POLL_MS);
+            return;
+          }
+          return gh("GET", "/repos/" + repo + "/issues/" + number + "/comments?per_page=10").then(function (cs) {
+            var last = cs && cs.length ? cs[cs.length - 1].body : "";
+            var lines = M.resultLines(last);
+            if (!lines.length) lines = [failed ? "処理できませんでした。GitHubで詳細を確認してください。" : "反映しました。"];
+            if (!failed) lines.push("再読み込みすると新しい一覧になります（公開の反映に1〜2分かかることがあります）。");
+            setManageStatus(lines, failed ? "error" : "ok", { url: url, reload: !failed });
+            resolve();
+          });
+        }).catch(function (e) { setManageStatus(ghErrorText(e, "結果の確認"), "error", { url: url }); resolve(); });
+      }
+      setTimeout(tick, POLL_MS);
+    });
+  }
+
+  // 鍵の設定
+  function openTokenDialog() {
+    el.tokenError.hidden = true;
+    el.tokenInput.value = "";
+    el.tokenForget.hidden = !ghToken();
+    el.tokenRepo.textContent = state.data.app.request_repo;
+    showDialog(el.tokenDialog);
+  }
+  function showTokenError(msg) { el.tokenError.textContent = msg; el.tokenError.hidden = false; el.tokenInput.focus(); }
+  function saveToken(ev) {
+    ev.preventDefault();
+    var t = el.tokenInput.value.trim();
+    if (!t) { showTokenError("鍵を貼り付けてください。"); return; }
+    if (!/^(github_pat_|ghp_)[A-Za-z0-9_]{20,}$/.test(t)) { showTokenError("GitHubの鍵の形式ではありません（github_pat_ から始まる文字列です）。"); return; }
+    var btn = el.tokenSave.querySelector("span");
+    el.tokenSave.disabled = true;
+    btn.textContent = "確認中…";
+    // 保存する前に、その鍵でこのリポジトリの Issue が読めるかを確かめる
+    gh("GET", "/repos/" + state.data.app.request_repo + "/issues?per_page=1&state=all", null, t)
+      .then(function () {
+        saveStr(TOKEN_KEY, t);
+        hideDialog(el.tokenDialog);
+        setManageStatus("鍵を保存しました。以後は「変更を送る」でアプリ内から送れます。", "ok");
+        renderManage();
+      })
+      .catch(function (e) { showTokenError(ghErrorText(e, "確認")); })
+      .then(function () { el.tokenSave.disabled = false; btn.textContent = "確認して保存"; });
+  }
+  function forgetToken() {
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) { /* noop */ }
+    hideDialog(el.tokenDialog);
+    setManageStatus("鍵を削除しました。GitHubの「Settings → Developer settings」で鍵そのものも無効化しておくと安心です。", "info");
+    renderManage();
   }
 
   // ---------- 通知（Web Push）----------
@@ -843,10 +1011,18 @@
     el.readBtn.addEventListener("click", function () { if (state.selected) toggleRead(state.selected); });
     el.markAll.addEventListener("click", markAllRead);
     el.themeToggle.addEventListener("click", cycleTheme);
-    el.addChannel.addEventListener("click", openChannelDialog);
-    el.channelCancel.addEventListener("click", closeChannelDialog);
-    el.channelForm.addEventListener("submit", submitChannel);
-    el.channelDialog.addEventListener("click", function (e) { if (e.target === el.channelDialog) closeChannelDialog(); });
+    el.manageChannels.addEventListener("click", openManageDialog);
+    el.manageClose.addEventListener("click", function () { hideDialog(el.manageDialog); });
+    el.manageAddForm.addEventListener("submit", submitAdd);
+    el.manageList.addEventListener("click", onManageListClick);
+    el.manageReset.addEventListener("click", resetChanges);
+    el.manageSend.addEventListener("click", sendChanges);
+    el.manageSettings.addEventListener("click", openTokenDialog);
+    el.manageDialog.addEventListener("click", function (e) { if (e.target === el.manageDialog) hideDialog(el.manageDialog); });
+    el.tokenForm.addEventListener("submit", saveToken);
+    el.tokenCancel.addEventListener("click", function () { hideDialog(el.tokenDialog); });
+    el.tokenForget.addEventListener("click", forgetToken);
+    el.tokenDialog.addEventListener("click", function (e) { if (e.target === el.tokenDialog) hideDialog(el.tokenDialog); });
 
     var timer = null;
     el.search.addEventListener("input", function () {

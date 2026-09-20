@@ -21,6 +21,11 @@
   --warn: #b54708;
   --warn-bg: #fffaeb;
   --warn-border: #f5d9a8;
+  --ok: #027a48;
+  --ok-bg: #ecfdf3;
+  --ok-border: #bfe3cc;
+  --danger: #b42318;
+  --danger-bg: #fef3f2;
   --star: #b7791f;
   --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
   --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.12);
@@ -56,6 +61,11 @@
     --warn: #f0b062;
     --warn-bg: #2a2114;
     --warn-border: #4d3a1c;
+    --ok: #6fd39a;
+    --ok-bg: #12261b;
+    --ok-border: #1f4a30;
+    --danger: #f0958c;
+    --danger-bg: #2a1614;
     --star: #e0b25a;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -82,6 +92,11 @@
   --warn: #f0b062;
   --warn-bg: #2a2114;
   --warn-border: #4d3a1c;
+  --ok: #6fd39a;
+  --ok-bg: #12261b;
+  --ok-border: #1f4a30;
+  --danger: #f0958c;
+  --danger-bg: #2a1614;
   --star: #e0b25a;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -558,7 +573,7 @@ svg { width: 20px; height: 20px; flex: none; }
   .topic__title { font-size: 19px; }
 }
 
-/* ---------- 追加: チャンネル追加ダイアログ ---------- */
+/* ---------- 追加: ダイアログ共通 ---------- */
 .nav__item--add { color: var(--primary); font-weight: 600; margin-top: 4px; }
 .nav__item--add svg { width: 16px; height: 16px; margin: 0 -1px 0 -3px; }
 .nav__item--add:hover { background: var(--tint); }
@@ -581,9 +596,56 @@ svg { width: 20px; height: 20px; flex: none; }
 .dialog__note { margin: 4px 0 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
 .dialog__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .dialog__actions .textbtn { height: 40px; }
+.dialog__actions--split .textbtn:first-child { margin-right: auto; }
+.textbtn:disabled { opacity: .45; cursor: default; }
+.textbtn:disabled:hover { background: var(--surface); }
+.textbtn--primary:disabled:hover { background: var(--primary); }
+.textbtn--danger { color: var(--danger); }
+.textbtn--danger:hover { background: var(--danger-bg); color: var(--danger); }
 @media (max-width: 960px) {
   .dialog { width: calc(100vw - 24px); }
   .dialog__form { padding: 20px 18px 16px; }
+}
+
+/* ---------- 追加: チャンネルの管理 ---------- */
+.dialog--wide { width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: hidden auto; }
+.dialog__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dialog__head .iconbtn { margin: -6px -8px -6px 0; }
+.manage__add { display: grid; gap: 6px; }
+.manage__addrow { display: flex; gap: 8px; }
+.manage__addrow .field { flex: 1; min-width: 0; }
+.manage__addrow .textbtn { height: 42px; flex: none; }
+.manage__list {
+  list-style: none; margin: 4px 0 0; padding: 0; max-height: min(40vh, 360px); overflow: auto;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--surface);
+}
+.mrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--border); }
+.mrow:first-child { border-top: 0; }
+.mrow__main { flex: 1; min-width: 0; }
+.mrow__name { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mrow__meta { font-size: 12px; color: var(--muted); margin-top: 1px; }
+.mrow--off .mrow__name { color: var(--muted); font-weight: 500; }
+.mrow--pending { background: var(--tint); box-shadow: inset 3px 0 0 var(--accent); }
+.mrow--pending .mrow__meta { color: var(--primary); font-weight: 600; }
+.mrow__actions { display: flex; gap: 6px; flex: none; }
+.mrow__actions .textbtn { height: 34px; padding: 0 10px; font-size: 13px; }
+.mrow--empty { color: var(--muted); font-size: 13px; justify-content: center; }
+.mstatus {
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 13px; line-height: 1.55;
+  background: var(--surface-muted); color: var(--text-2); display: grid; gap: 4px;
+}
+.mstatus p { margin: 0; }
+.mstatus--ok { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok); }
+.mstatus--error { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn); }
+.mstatus__links { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px !important; }
+.mstatus__links a { color: inherit; font-weight: 600; }
+.mstatus__links .textbtn { color: var(--text); background: var(--surface); }
+.dialog__steps { margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.65; color: var(--text-2); display: grid; gap: 4px; }
+.dialog__steps code { font-family: var(--font-mono); font-size: 12px; background: var(--surface-muted); padding: 1px 5px; border-radius: 4px; }
+@media (max-width: 960px) {
+  /* 狭い画面では、設定のボタンを2段目に回して横にはみ出さないようにする */
+  .dialog__actions--split { flex-wrap: wrap; }
+  .dialog__actions--split .textbtn:first-child { order: 2; flex-basis: 100%; margin-right: 0; justify-content: center; }
 }
 
 /* ---------- 追加: 通知の設定 ---------- */
